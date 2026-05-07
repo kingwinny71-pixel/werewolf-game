@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Werewolf: Horror Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Creepster&family=Nosifer&family=Crimson+Text:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --blood-red: #7f1d1d;
+            --shadow-black: #050505;
+            --bone-white: #e5e7eb;
+        }
+
+        body {
+            font-family: 'Crimson Text', serif;
+            background-color: var(--shadow-black);
+            background-image: radial-gradient(circle, #1a0505 0%, #050505 100%);
+            color: var(--bone-white);
+            overflow-x: hidden;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .font-horror { font-family: 'Creepster', cursive; }
+        .font-bloody { font-family: 'Nosifer', cursive; }
+
+        @keyframes flicker {
+            0%, 100% { opacity: 1; text-shadow: 0 0 10px rgba(127, 29, 29, 0.8); }
+            50% { opacity: 0.8; text-shadow: 0 0 5px rgba(127, 29, 29, 0.4); }
+        }
+        .animate-flicker { animation: flicker 3s infinite; }
+
+        .vignette {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            box-shadow: inset 0 0 150px rgba(0,0,0,0.9);
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .card-horror {
+            background: linear-gradient(145deg, #1a0a0a 0%, #0a0000 100%);
+            border: 1px solid #450a0a;
+            box-shadow: 0 0 30px rgba(0,0,0,0.8);
+            position: relative;
+        }
+
+        .btn-blood {
+            background: linear-gradient(to bottom, #991b1b, #450a0a);
+            border: 1px solid #7f1d1d;
+            transition: all 0.3s;
+            text-shadow: 1px 1px 2px black;
+        }
+
+        .role-svg {
+            width: 80px;
+            height: 80px;
+            fill: #7f1d1d;
+            filter: drop-shadow(0 0 5px #000);
+        }
+
+        .blur-reveal {
+            filter: blur(25px);
+            transition: filter 0.8s ease-out;
+            cursor: pointer;
+        }
+        .blur-reveal:active {
+            filter: blur(0);
+        }
+
+        .horror-card-container {
+            perspective: 1000px;
+            width: 260px;
+            height: 360px;
+            cursor: pointer;
+        }
+
+        .horror-card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transform-style: preserve-3d;
+        }
+
+        .horror-card-inner.is-flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 1rem;
+            border: 2px solid #450a0a;
+            box-shadow: 0 0 30px rgba(0,0,0,0.9);
+        }
+
+        .card-front {
+            background: linear-gradient(145deg, #1a0a0a, #050505);
+            color: #7f1d1d;
+        }
+
+        .card-back {
+            background: linear-gradient(145deg, #2a0a0a, #0a0000);
+            transform: rotateY(180deg);
+            box-shadow: inset 0 0 50px rgba(127, 29, 29, 0.2);
+        }
+
+        .is-werewolf-reveal .card-back {
+            background: radial-gradient(circle, #450a0a 0%, #050505 100%);
+            box-shadow: 0 0 50px #ff0000, inset 0 0 30px #000;
+        }
+
+        .werewolf-glare {
+            filter: drop-shadow(0 0 8px #ff0000);
+            animation: glare-pulse 1.5s infinite alternate;
+        }
+
+        @keyframes glare-pulse {
+            from { filter: drop-shadow(0 0 5px #ff0000); transform: scale(1); }
+            to { filter: drop-shadow(0 0 15px #ff0000); transform: scale(1.05); }
+        }
+
+        .blood-pulse {
+            animation: blood-pulse-anim 2s infinite;
+        }
+
+        @keyframes blood-pulse-anim {
+            0% { box-shadow: 0 0 10px #450a0a, inset 0 0 10px #450a0a; }
+            50% { box-shadow: 0 0 30px #991b1b, inset 0 0 20px #7f1d1d; }
+            100% { box-shadow: 0 0 10px #450a0a, inset 0 0 10px #450a0a; }
+        }
+
+        /* Custom scrollbar for horror feel */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: #050505; }
+        ::-webkit-scrollbar-thumb { background: #7f1d1d; }
+    </style>
+</head>
+<body class="flex flex-col items-center p-4">
+    <div class="vignette"></div>
+
+    <div id="game-container" class="w-full max-w-lg z-10 mt-10">
+        <div id="app-root"></div>
+    </div>
+
+    <script>
+        const SoundEngine = {
+            initialized: false,
+            
+            init() {
+                if (this.initialized) return;
+                Tone.start();
+                this.initialized = true;
+                this.setupInstruments();
+                this.playAmbient();
+            },
+
+            setupInstruments() {
+                // Dark Ambient Drone
+                this.drone = new Tone.Oscillator(40, "sawtooth").toDestination();
+                this.filter = new Tone.Filter(200, "lowpass").toDestination();
+                this.drone.connect(this.filter);
+                this.drone.volume.value = -25;
+                
+                this.lfo = new Tone.LFO(0.1, 100, 500).connect(this.filter.frequency).start();
+
+                // Blood Splatter / Click Sound
+                this.clickSynth = new Tone.MembraneSynth({
+                    pitchDecay: 0.05,
+                    octaves: 4,
+                    oscillator: { type: "sine" },
+                    envelope: { attack: 0.001, decay: 0.2, sustain: 0.01, release: 1.4 }
+                }).toDestination();
+                this.clickSynth.volume.value = -10;
+
+                // Ghostly Night Bell
+                this.bell = new Tone.MetalSynth({
+                    frequency: 100,
+                    envelope: { attack: 0.001, decay: 1.5, release: 0.2 },
+                    harmonicity: 5.1,
+                    modulationIndex: 32,
+                    resonance: 4000,
+                    octaves: 1.5
+                }).toDestination();
+                this.bell.volume.value = -20;
+
+                // Werewolf Growl Simulation
+                this.growl = new Tone.NoiseSynth({
+                    noise: { type: "brown" },
+                    envelope: { attack: 0.1, decay: 0.8, sustain: 0.2, release: 1 }
+                }).toDestination();
+                this.growlDist = new Tone.Distortion(0.8).toDestination();
+                this.growl.connect(this.growlDist);
+                this.growl.volume.value = -15;
+            },
+
+            playAmbient() {
+                this.drone.start();
+            },
+
+            playClick() { if(this.initialized) this.clickSynth.triggerAttackRelease("C1", "8n"); },
+            
+            playBell() { if(this.initialized) this.bell.triggerAttackRelease(100, "1n"); },
+
+            playReveal(isWolf) {
+                if(!this.initialized) return;
+                if(isWolf) {
+                    this.growl.triggerAttackRelease("1n");
+                    // Deep ominous impact
+                    this.clickSynth.triggerAttackRelease("G0", "2n");
+                } else {
+                    // Soft ghostly shimmer
+                    this.bell.triggerAttackRelease(400, "4n");
+                }
+            }
+        };
+
+        // Custom SVG icons for roles
+        const ICONS = {
+            WEREWOLF: `
+            <svg class="role-svg scale-150 werewolf-glare" viewBox="0 0 100 100">
+                <path d="M50 10 L35 25 L20 20 L30 40 L5 55 L30 65 L35 90 L50 75 L65 90 L70 65 L95 55 L70 40 L80 20 L65 25 Z" fill="#1a0000" stroke="#7f1d1d" stroke-width="2"/>
+                <path d="M42 45 Q50 35 58 45" fill="none" stroke="#991b1b" stroke-width="1"/>
+                <circle cx="40" cy="48" r="2.5" fill="#ff0000"/>
+                <circle cx="60" cy="48" r="2.5" fill="#ff0000"/>
+                <path d="M45 65 L50 72 L55 65" fill="#991b1b"/>
+                <path d="M35 55 Q50 50 65 55" fill="none" stroke="#450a0a" stroke-width="1"/>
+            </svg>`,
+            VILLAGER: `<svg class="role-svg" viewBox="0 0 24 24"><path d="M12,2L1,21H23L12,2M12,6L19.53,19H4.47L12,6M11,10V14H13V10H11M11,16V18H13V16H11Z" /></svg>`,
+            SEER: `<svg class="role-svg" viewBox="0 0 24 24"><path d="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z" /></svg>`,
+            DOCTOR: `<svg class="role-svg" viewBox="0 0 24 24"><path d="M18,18.5A1.5,1.5 0 0,0 19.5,17V5A1.5,1.5 0 0,0 18,3.5H6A1.5,1.5 0 0,0 4.5,5V17A1.5,1.5 0 0,0 6,18.5H18M10,14H8V12H10V10H12V12H14V14H12V16H10V14Z" /></svg>`,
+            WITCH: `<svg class="role-svg" viewBox="0 0 24 24"><path d="M12,2L4.5,20.29L5.21,21L12,18L18.79,21L19.5,20.29L12,2Z" /></svg>`,
+            HUNTER: `<svg class="role-svg" viewBox="0 0 24 24"><path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M11,6V13L16.25,16.15L17,14.92L12.5,12.25V6H11Z" /></svg>`
+        };
+
+        const ROLES = {
+            WEREWOLF: { name: 'Werewolf', icon: ICONS.WEREWOLF, desc: 'A beast in human skin. Your hunger is eternal. Kill one villager every night and hide your scent by day.', team: 'EVIL' },
+            VILLAGER: { name: 'Villager', icon: ICONS.VILLAGER, desc: 'A simple, terrified soul. You have no powers but your voice. Use it to weed out the monsters.', team: 'GOOD' },
+            SEER: { name: 'Seer', icon: ICONS.SEER, desc: 'The third eye opens. Each night, peer into the darkness to reveal the true face of one player.', team: 'GOOD' },
+            DOCTOR: { name: 'Doctor', icon: ICONS.DOCTOR, desc: 'A master of the healing arts. Choose one player each night to shield from the wolf\'s claws.', team: 'GOOD' },
+            WITCH: { name: 'Witch', icon: ICONS.WITCH, desc: 'Keeper of life and death. You have one potion to save a soul and one poison to take a life.', team: 'GOOD' },
+            HUNTER: { name: 'Hunter', icon: ICONS.HUNTER, desc: 'Vengeance from beyond. If you perish, you may fire one final silver bullet into a player of your choice.', team: 'GOOD' }
+        };
+
+        let state = {
+            view: 'landing',
+            players: [],
+            currentPlayerIndex: 0,
+            nightData: { victimId: null, protectedId: null, witchHealUsed: false, witchKillId: null },
+            witchPotions: { heal: true, kill: true },
+            lastEliminated: [],
+            winner: null
+        };
+
+        function setState(newState) {
+            state = { ...state, ...newState };
+            SoundEngine.playClick();
+            render();
+        }
+
+        function assignRoles(names) {
+            let rolePool = [];
+            const count = names.length;
+            
+            // Scalable wolf count
+            let wolves = count >= 9 ? 3 : (count >= 6 ? 2 : 1);
+            for(let i=0; i<wolves; i++) rolePool.push(ROLES.WEREWOLF);
+            
+            rolePool.push(ROLES.SEER);
+            rolePool.push(ROLES.DOCTOR);
+            if(count >= 6) rolePool.push(ROLES.WITCH);
+            if(count >= 7) rolePool.push(ROLES.HUNTER);
+            
+            while(rolePool.length < count) rolePool.push(ROLES.VILLAGER);
+            rolePool = rolePool.sort(() => Math.random() - 0.5);
+
+            return names.map((name, i) => ({
+                id: i,
+                name,
+                role: rolePool[i],
+                isAlive: true
+            }));
+        }
+
+        function render() {
+            const root = document.getElementById('app-root');
+            root.innerHTML = '';
+
+            switch(state.view) {
+                case 'landing': renderLanding(root); break;
+                case 'grimoire': renderGrimoire(root); break;
+                case 'setup': renderSetup(root); break;
+                case 'reveal': renderReveal(root); break;
+                case 'night-intro': renderNightIntro(root); break;
+                case 'night-werewolf': renderNightWerewolf(root); break;
+                case 'night-seer': renderNightSeer(root); break;
+                case 'night-doctor': renderNightDoctor(root); break;
+                case 'night-witch': renderNightWitch(root); break;
+                case 'day-results': renderDayResults(root); break;
+                case 'day-vote': renderDayVote(root); break;
+                case 'game-over': renderGameOver(root); break;
+            }
+        }
+
+        function renderLanding(root) {
+            root.innerHTML = `
+                <div class="text-center py-10">
+                    <h1 class="text-7xl font-bloody text-red-700 animate-pulse mb-4">WEREWOLF</h1>
+                    <p class="text-red-900 font-bold uppercase tracking-[0.4em] text-xs mb-16 italic">A Night of Red Feasting</p>
+                    <div class="space-y-4">
+                        <button onclick="SoundEngine.init(); setState({ view: 'setup' })" class="btn-blood w-full py-5 text-2xl font-horror tracking-widest text-white">
+                            ENTER THE VILLAGE
+                        </button>
+                        <button onclick="setState({ view: 'grimoire' })" class="w-full py-3 text-red-800 font-bold uppercase text-xs tracking-widest hover:text-red-500 transition-colors">
+                            📜 THE GRIMOIRE OF ROLES
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderGrimoire(root) {
+            root.innerHTML = `
+                <div class="card-horror p-6 rounded-lg">
+                    <h2 class="text-3xl font-horror text-red-600 mb-6 border-b border-red-900 pb-2 text-center">THE SOULS WITHIN</h2>
+                    <div class="space-y-6 max-h-[60vh] overflow-y-auto pr-2">
+                        ${Object.values(ROLES).map(role => `
+                            <div class="flex items-start gap-4 p-3 bg-black/40 border border-red-900/20">
+                                <div class="shrink-0 scale-75">${role.icon}</div>
+                                <div>
+                                    <h3 class="font-bloody text-red-700 text-sm mb-1">${role.name}</h3>
+                                    <p class="text-xs text-gray-400 italic">${role.desc}</p>
+                                    <p class="text-[10px] mt-1 font-bold ${role.team === 'EVIL' ? 'text-red-600' : 'text-blue-800'}">${role.team} ALIGNMENT</p>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <button onclick="setState({ view: 'landing' })" class="btn-blood w-full mt-6 py-3 font-bold">RETURN TO SHADOWS</button>
+                </div>
+            `;
+        }
+
+        function renderSetup(root) {
+            root.innerHTML = `
+                <div class="card-horror p-8 rounded-lg">
+                    <h2 class="text-3xl font-horror text-red-600 mb-6 border-b border-red-900 pb-2">Sacrificial List</h2>
+                    <div id="player-list" class="space-y-2 mb-6"></div>
+                    <button onclick="addPlayer()" class="w-full text-red-900 hover:text-red-600 py-2 border border-red-950 text-xs font-bold uppercase mb-4 tracking-tighter">
+                        + Summon Soul
+                    </button>
+                    <button id="start-btn" class="btn-blood w-full py-4 text-xl font-horror tracking-widest disabled:opacity-30">
+                        BEGIN THE CURSE
+                    </button>
+                </div>
+            `;
+
+            const names = ["Arthur", "Eleanor", "Bram", "Victor", "Mina"];
+            const list = document.getElementById('player-list');
+            
+            const updateUI = () => {
+                list.innerHTML = names.map((n, i) => `
+                    <div class="flex gap-2">
+                        <input type="text" value="${n}" onchange="names[${i}]=this.value" class="flex-1 bg-black border border-red-900/50 p-2 text-red-200 focus:outline-none">
+                        ${names.length > 5 ? `<button onclick="names.splice(${i},1); updateUI()" class="text-red-900 px-2 font-bold">×</button>` : ''}
+                    </div>
+                `).join('');
+                document.getElementById('start-btn').disabled = names.length < 5;
+            };
+
+            window.addPlayer = () => { names.push("Subject " + (names.length + 1)); updateUI(); };
+            document.getElementById('start-btn').onclick = () => {
+                setState({ players: assignRoles(names), view: 'reveal', currentPlayerIndex: 0 });
+            };
+            updateUI();
+            window.names = names;
+            window.updateUI = updateUI;
+        }
+
+        function renderReveal(root) {
+            const p = state.players[state.currentPlayerIndex];
+            const isWolf = p.role.name === 'Werewolf';
+            
+            root.innerHTML = `
+                <div class="text-center py-6 flex flex-col items-center">
+                    <p class="text-red-900 font-bold uppercase text-xs mb-2">PASS THE DEVICE TO</p>
+                    <h2 class="text-5xl font-horror text-white mb-10 animate-flicker">${p.name}</h2>
+                    
+                    <div class="horror-card-container ${isWolf ? 'is-werewolf-reveal' : ''}" 
+                         onclick="this.querySelector('.horror-card-inner').classList.toggle('is-flipped'); SoundEngine.playReveal(${isWolf})">
+                            <!-- The Back of the Card (Hidden) -->
+                            <div class="card-face card-front p-8">
+                                <div class="text-6xl mb-4">🩸</div>
+                                <h3 class="text-xl font-horror tracking-tighter">TAP TO REVEAL</h3>
+                                <p class="text-[10px] text-red-950 uppercase mt-4 animate-pulse">Your soul awaits...</p>
+                            </div>
+
+                            <!-- The Front of the Card (Role) -->
+                            <div class="card-face card-back p-8 ${isWolf ? 'border-red-600' : 'blood-pulse'}">
+                                <div class="flex justify-center mb-6 h-24 items-center">${p.role.icon}</div>
+                                <h3 class="text-3xl font-bloody text-red-600 mb-2">${p.role.name}</h3>
+                                <div class="h-px w-full bg-red-900/30 mb-4"></div>
+                                <p class="text-xs text-red-200/60 italic leading-relaxed px-2">${p.role.desc}</p>
+                                <p class="text-[10px] font-bold mt-4 ${p.role.team === 'EVIL' ? 'text-red-600' : 'text-blue-900'}">
+                                    ALIGNMENT: ${p.role.team}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <p class="text-[10px] text-red-950 font-bold mt-10 uppercase italic">Tap card to hide/reveal. Memorize your role.</p>
+
+                    <button onclick="nextReveal()" class="btn-blood w-full mt-10 py-4 font-bold tracking-widest hover:scale-105 active:scale-95">
+                        I ACCEPT MY DESTINY
+                    </button>
+                </div>
+            `;
+            window.nextReveal = () => {
+                if(state.currentPlayerIndex < state.players.length - 1) {
+                    setState({ currentPlayerIndex: state.currentPlayerIndex + 1 });
+                } else {
+                    setState({ view: 'night-intro' });
+                }
+            };
+        }
+
+        function renderNightIntro(root) {
+            SoundEngine.playBell();
+            root.innerHTML = `
+                <div class="text-center py-24">
+                    <div class="text-8xl mb-8 animate-pulse">🌘</div>
+                    <h2 class="text-5xl font-horror text-red-700 mb-4">EYES CLOSED</h2>
+                    <p class="text-red-900 font-bold uppercase text-xs tracking-[0.3em] mb-12">The hunters are awakening</p>
+                    <button onclick="setState({ view: 'night-werewolf' })" class="btn-blood px-12 py-4 font-bold tracking-widest">DESCEND INTO NIGHT</button>
+                </div>
+            `;
+        }
+
+        function renderNightWerewolf(root) {
+            const alive = state.players.filter(p => p.isAlive);
+            root.innerHTML = `
+                <div class="animate-fade-in">
+                    <h2 class="text-4xl font-bloody text-red-700 mb-1">FEEDING TIME</h2>
+                    <p class="text-red-950 text-[10px] font-bold uppercase mb-8 italic">Choose a throat to tear open</p>
+                    <div class="space-y-2">
+                        ${alive.map(p => `
+                            <button onclick="state.nightData.victimId=${p.id}; setState({view: 'night-seer'})" class="w-full text-left bg-black border border-red-900/20 p-4 hover:border-red-600 transition-all flex justify-between items-center group">
+                                <span class="font-bold text-red-200">${p.name}</span>
+                                <span class="opacity-0 group-hover:opacity-100 text-[10px] text-red-700 font-horror text-lg">MURDER</span>
+                            </button>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderNightSeer(root) {
+            const seer = state.players.find(p => p.role.name === 'Seer' && p.isAlive);
+            if(!seer) return setState({ view: 'night-doctor' });
+
+            root.innerHTML = `
+                <div>
+                    <h2 class="text-4xl font-horror text-red-500 mb-1">THE SEER WAKES</h2>
+                    <p class="text-red-950 text-[10px] font-bold uppercase mb-8 italic">Peer into a soul</p>
+                    <div id="seer-grid" class="grid grid-cols-1 gap-2">
+                        ${state.players.filter(p => p.isAlive && p.role.name !== 'Seer').map(p => `
+                            <button onclick="peer(${p.id}, '${p.role.name}')" class="bg-black/50 border border-red-900/30 p-4 text-left font-bold text-red-200">${p.name}</button>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            window.peer = (id, roleName) => {
+                const target = state.players.find(p => p.id === id);
+                document.getElementById('seer-grid').innerHTML = `
+                    <div class="card-horror p-8 text-center rounded-lg">
+                        <p class="text-red-950 text-xs mb-4 uppercase font-bold">The vision reveals...</p>
+                        <div class="flex justify-center mb-4">${target.role.icon}</div>
+                        <h3 class="text-3xl font-bloody text-red-600">${roleName}</h3>
+                        <button onclick="setState({view: 'night-doctor'})" class="btn-blood w-full mt-8 py-3">SILENCE</button>
+                    </div>
+                `;
+            };
+        }
+
+        function renderNightDoctor(root) {
+            const doc = state.players.find(p => p.role.name === 'Doctor' && p.isAlive);
+            if(!doc) return setState({ view: 'night-witch' });
+
+            root.innerHTML = `
+                <div>
+                    <h2 class="text-4xl font-horror text-green-900 mb-1">THE DOCTOR MENDS</h2>
+                    <p class="text-green-950 text-[10px] font-bold uppercase mb-8 italic">Choose who shall not perish tonight</p>
+                    <div class="space-y-2">
+                        ${state.players.filter(p => p.isAlive).map(p => `
+                            <button onclick="state.nightData.protectedId=${p.id}; setState({view: 'night-witch'})" class="bg-black border border-green-900/20 p-4 w-full text-left font-bold text-green-200">${p.name}</button>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderNightWitch(root) {
+            const witch = state.players.find(p => p.role.name === 'Witch' && p.isAlive);
+            if(!witch) return finalizeNight();
+
+            const victim = state.players.find(p => p.id === state.nightData.victimId);
+            const others = state.players.filter(p => p.isAlive);
+
+            root.innerHTML = `
+                <div class="text-center">
+                    <h2 class="text-4xl font-horror text-purple-900 mb-2">THE WITCH STIRS</h2>
+                    <p class="text-purple-950 text-[10px] font-bold uppercase mb-6 italic">Life or Death is in your hands</p>
+                    
+                    <div class="card-horror p-4 mb-6 border-purple-900/30">
+                        <p class="text-xs text-purple-300">The werewolves chose: <span class="text-white font-bold">${victim ? victim.name : 'Nobody'}</span></p>
+                        <button onclick="useHeal()" ${!state.witchPotions.heal ? 'disabled opacity-20' : ''} class="w-full mt-2 py-2 bg-purple-900/40 text-xs font-bold uppercase">🧪 USE HEALING POTION</button>
+                    </div>
+
+                    <div class="space-y-2 text-left">
+                        <p class="text-[10px] text-purple-900 font-bold uppercase ml-1">Use Death Poison?</p>
+                        ${others.map(p => `
+                            <button onclick="usePoison(${p.id})" ${!state.witchPotions.kill ? 'disabled opacity-20' : ''} class="w-full bg-black border border-purple-900/20 p-3 text-xs text-purple-200 hover:border-purple-600">${p.name}</button>
+                        `).join('')}
+                        <button onclick="finalizeNight()" class="w-full py-4 btn-blood mt-4">LEAVE THEM TO FATE</button>
+                    </div>
+                </div>
+            `;
+
+            window.useHeal = () => { state.nightData.witchHealUsed = true; state.witchPotions.heal = false; finalizeNight(); };
+            window.usePoison = (id) => { state.nightData.witchKillId = id; state.witchPotions.kill = false; finalizeNight(); };
+        }
+
+        function finalizeNight() {
+            let killed = [];
+            const { victimId, protectedId, witchHealUsed, witchKillId } = state.nightData;
+
+            // Resolve werewolves
+            if(!witchHealUsed && victimId !== protectedId) {
+                const p = state.players.find(pl => pl.id === victimId);
+                if(p) killed.push(p);
+            }
+
+            // Resolve Witch poison
+            if(witchKillId !== null) {
+                const p = state.players.find(pl => pl.id === witchKillId);
+                if(p) killed.push(p);
+            }
+
+            // Apply deaths
+            killed.forEach(p => p.isAlive = false);
+            
+            // Hunter check - if hunter died, we need a special "Hunter's Shot" view
+            const deadHunter = killed.find(p => p.role.name === 'Hunter');
+            
+            state.lastEliminated = killed;
+            state.nightData = { victimId: null, protectedId: null, witchHealUsed: false, witchKillId: null };
+            
+            setState({ view: 'day-results' });
+        }
+
+        function renderDayResults(root) {
+            const killed = state.lastEliminated;
+            root.innerHTML = `
+                <div class="text-center py-10">
+                    <div class="text-7xl mb-6">${killed.length > 0 ? '🩸' : '⛅'}</div>
+                    <h2 class="text-5xl font-horror text-red-700 mb-4 tracking-tighter">THE SUN BLEEDS</h2>
+                    <div class="card-horror p-8 mb-10">
+                        ${killed.length > 0 
+                            ? `<p class="text-xl italic">The following were found slaughtered:</p>
+                               <div class="mt-4 space-y-2">
+                                 ${killed.map(p => `<div class="font-bloody text-red-600 text-2xl">${p.name}</div><div class="text-[10px] text-gray-600">They were a ${p.role.name}</div>`).join('')}
+                               </div>`
+                            : `<p class="text-xl italic text-green-700">A miracle... everyone survived the night.</p>`
+                        }
+                    </div>
+                    <button onclick="setState({ view: 'day-vote' })" class="btn-blood w-full py-4 text-xl font-horror">GATHER FOR TRIAL</button>
+                </div>
+            `;
+        }
+
+        function renderDayVote(root) {
+            const alive = state.players.filter(p => p.isAlive);
+            root.innerHTML = `
+                <div>
+                    <h2 class="text-4xl font-horror text-red-600 mb-2">TRIAL BY FIRE</h2>
+                    <p class="text-red-950 text-[10px] font-bold uppercase mb-8 italic">Cast a vote for the gallows</p>
+                    <div class="space-y-2">
+                        ${alive.map(p => `
+                            <button onclick="execute(${p.id})" class="w-full bg-black/80 border border-red-900/20 p-4 text-left group hover:border-red-600 transition-all">
+                                <span class="font-bold text-red-200">${p.name}</span>
+                                <span class="float-right text-[10px] text-red-950 font-bold uppercase group-hover:text-red-600">ACCUSE</span>
+                            </button>
+                        `).join('')}
+                        <button onclick="setState({view: 'night-intro'})" class="w-full py-4 border-2 border-dashed border-red-950 text-red-900 font-bold uppercase text-xs mt-4 tracking-widest">Skip the execution</button>
+                    </div>
+                </div>
+            `;
+            window.execute = (id) => {
+                const p = state.players.find(pl => pl.id === id);
+                p.isAlive = false;
+                
+                root.innerHTML = `
+                    <div class="text-center py-20">
+                        <h2 class="text-4xl font-horror text-red-700 mb-6">${p.name} was hanged...</h2>
+                        <div class="flex justify-center mb-6">${p.role.icon}</div>
+                        <p class="text-xl mb-12">They were a <span class="font-bloody text-red-600">${p.role.name}</span></p>
+                        <button id="cont-btn" class="btn-blood px-12 py-4 font-bold">NEXT</button>
+                    </div>
+                `;
+                document.getElementById('cont-btn').onclick = () => {
+                    if(!checkWin()) setState({ view: 'night-intro' });
+                };
+            };
+        }
+
+        function checkWin() {
+            const alive = state.players.filter(p => p.isAlive);
+            const wolves = alive.filter(p => p.role.team === 'EVIL');
+            const others = alive.filter(p => p.role.team === 'GOOD');
+
+            if (wolves.length === 0) {
+                setState({ view: 'game-over', winner: 'VILLAGERS' });
+                return true;
+            }
+            if (wolves.length >= others.length) {
+                setState({ view: 'game-over', winner: 'WEREWOLVES' });
+                return true;
+            }
+            return false;
+        }
+
+        function renderGameOver(root) {
+            const win = state.winner === 'WEREWOLVES';
+            root.innerHTML = `
+                <div class="text-center py-10">
+                    <h2 class="text-6xl font-bloody mb-6 ${win ? 'text-red-700' : 'text-blue-800'}">${state.winner} WIN</h2>
+                    <p class="italic text-gray-400 mb-10">${win ? 'The village is silent. The feast is complete.' : 'The monsters have been purged. The sun rises on a scarred land.'}</p>
+                    
+                    <div class="space-y-2 mb-10 text-left">
+                        ${state.players.map(p => `
+                            <div class="flex justify-between items-center p-3 bg-black/40 border border-red-900/10 ${!p.isAlive ? 'opacity-20' : ''}">
+                                <span class="${p.isAlive ? 'text-white' : 'line-through text-red-900'}">${p.name}</span>
+                                <span class="text-[10px] font-horror tracking-widest text-red-700 uppercase">${p.role.name}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+
+                    <button onclick="location.reload()" class="btn-blood w-full py-5 text-2xl font-horror">RESTART THE RITUAL</button>
+                </div>
+            `;
+        }
+
+        window.onload = render;
+    </script>
+</body>
+</html>
