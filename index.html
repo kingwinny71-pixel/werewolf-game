@@ -3,347 +3,329 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Werewolf: Ultra Horror Edition</title>
-    
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6999553446379672"
-     crossorigin="anonymous"></script>
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6999553446379672"
-     crossorigin="anonymous"></script>
-<!-- AdSense Ad 1 -->
-<ins class="adsbygoogle"
-     style="display:block"
-     data-ad-client="ca-pub-6999553446379672"
-     data-ad-slot="8686157888"
-     data-ad-format="auto"
-     data-full-width-responsive="true"></ins>
-<script>
-     (adsbygoogle = window.adsbygoogle || []).push({});
-</script>
-    
+    <title>Werewolf Party</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Creepster&family=Metal+Mania&family=Nosifer&display=swap" rel="stylesheet">
     <style>
         :root {
             --blood-red: #b91c1c;
-            --deep-void: #0a0a0a;
+            --deep-void: #050505;
+            --parchment: #fdf5e6;
         }
 
         body {
             font-family: 'Metal Mania', cursive;
-            background: 
-                linear-gradient(rgba(10, 10, 10, 0.9), rgba(139, 0, 0, 0.4)), 
-                url('https://media.istockphoto.com/id/963342958/vector/bloody-grunge-abstract-texture-background.jpg?s=612x612&w=0&k=20&c=zmVuVv34fH2iW4qV094IijYSPW-4VVVOp5gtZekWMbs=');
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
+            background: black;
             color: #fca5a5;
             min-height: 100vh;
-            overflow-x: hidden;
             margin: 0;
+            overflow-x: hidden;
+            transition: background 2s ease;
+        }
+
+        .bg-night { background: radial-gradient(circle, #1a0b2e 0%, #050505 100%); }
+        .bg-day { background: radial-gradient(circle, #450a0a 0%, #050505 100%); }
+        .bg-voting { background: radial-gradient(circle, #2a2a2a 0%, #050505 100%); }
+
+        .glass-panel {
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(185, 28, 28, 0.3);
+            box-shadow: 0 0 40px rgba(0,0,0,0.5);
         }
 
         .card-container {
             perspective: 1000px;
-            width: 280px;
-            height: 400px;
-            margin: 0 auto;
+            width: 260px;
+            height: 380px;
+            margin: 1rem auto;
         }
 
         .card-inner {
             position: relative;
             width: 100%;
             height: 100%;
-            transition: transform 0.8s;
+            transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             transform-style: preserve-3d;
-            cursor: pointer;
         }
 
-        .card-inner.is-flipped {
-            transform: rotateY(180deg);
-        }
+        .card-inner.is-flipped { transform: rotateY(180deg); }
 
         .card-face {
             position: absolute;
             width: 100%;
             height: 100%;
-            -webkit-backface-visibility: hidden;
             backface-visibility: hidden;
-            border-radius: 1.5rem;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            border: 8px solid #222;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            border: 4px solid var(--blood-red);
-            box-shadow: 0 0 30px rgba(185, 28, 28, 0.4);
+            justify-content: space-between;
         }
 
-        .card-front {
-            background: linear-gradient(135deg, #262626 0%, #000 100%);
+        .card-front { background: #111; color: #333; }
+        .card-back { transform: rotateY(180deg); background: var(--parchment); color: #111; }
+
+        .card-werewolf { border-color: #8b0000 !important; }
+        .card-villager { border-color: #2d5a27 !important; }
+        .card-seer { border-color: #4b0082 !important; }
+        .card-doctor { border-color: #0047ab !important; }
+
+        .player-grid {
+            display: grid;
+            gap: 0.5rem;
+            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
         }
 
-        .card-back {
-            background: linear-gradient(135deg, #1a1a1a 0%, #450a0a 100%);
-            transform: rotateY(180deg);
+        .log-entry {
+            border-left: 3px solid var(--blood-red);
+            padding-left: 0.5rem;
+            margin-bottom: 0.5rem;
+            font-size: 0.85rem;
+            opacity: 0.8;
         }
 
-        .spooky-glow {
-            text-shadow: 0 0 10px rgba(239, 68, 68, 0.8);
+        @keyframes pulse-glow {
+            0% { box-shadow: 0 0 10px var(--blood-red); }
+            50% { box-shadow: 0 0 30px var(--blood-red); }
+            100% { box-shadow: 0 0 10px var(--blood-red); }
         }
 
-        @keyframes pulse-red {
-            0%, 100% { box-shadow: 0 0 15px rgba(185, 28, 28, 0.5); }
-            50% { box-shadow: 0 0 40px rgba(185, 28, 28, 0.8); }
-        }
-
-        .animate-pulse-red { animation: pulse-red 2s infinite; }
-
-        .night-mode {
-            filter: grayscale(0.5) contrast(1.2) brightness(0.7);
-            background: #000;
-        }
-
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #000; }
-        ::-webkit-scrollbar-thumb { background: var(--blood-red); border-radius: 10px; }
+        .active-glow { animation: pulse-glow 2s infinite; }
+        
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: var(--blood-red); }
     </style>
 </head>
-<body class="p-4 md:p-8 flex items-center justify-center min-h-screen">
-    
-    <div id="app" class="w-full max-w-2xl mx-auto relative z-10 transition-all duration-1000">
-        <header class="text-center mb-10 flex flex-col items-center">
-            <div class="relative group w-40 h-40 md:w-56 md:h-56 mb-6">
-                <div class="absolute inset-0 bg-red-600/30 blur-[40px] rounded-full animate-pulse scale-110"></div>
-                <div class="relative w-full h-full rounded-full border-4 border-red-900 bg-gray-200 overflow-hidden shadow-[0_0_50px_rgba(139,0,0,0.6)] flex items-center justify-center">
-                    <img 
-                        src="https://us.123rf.com/450wm/saifulislamssm/saifulislamssm2410/saifulislamssm241000120/301572872-wolf-in-bold-shield-shape-mascot-logo-vector-illustration-design.jpg?ver=6" 
-                        alt="Werewolf Mascot" 
-                        class="w-[85%] h-[85%] object-contain transition-transform duration-700 group-hover:scale-110 group-hover:rotate-3"
-                        style="mix-blend-mode: multiply;"
-                    >
-                </div>
+<body class="bg-night">
+
+    <div id="app" class="max-w-6xl mx-auto p-4 flex flex-col min-h-screen">
+        <header class="text-center mb-4 pt-4">
+            <div class="w-24 h-24 md:w-32 md:h-32 rounded-full mx-auto mb-2 overflow-hidden border-4 border-red-900 shadow-2xl bg-white">
+                <img src="https://us.123rf.com/450wm/saifulislamssm/saifulislamssm2410/saifulislamssm241000120/301572872-wolf-in-bold-shield-shape-mascot-logo-vector-illustration-design.jpg?ver=6" 
+                     alt="Wolf Mascot" class="w-full h-full object-contain" style="mix-blend-mode: multiply;">
             </div>
-            <h1 class="text-6xl md:text-8xl font-['Creepster'] text-red-700 drop-shadow-[0_0_15px_rgba(185,28,28,0.5)] mb-2 tracking-widest">WEREWOLF</h1>
-            <p id="narrator-subtitle" class="text-red-500 italic text-lg opacity-80">The Digital Narrator Awaits...</p>
+            <h1 class="text-4xl md:text-6xl font-['Creepster'] text-red-700 uppercase tracking-tighter">Werewolf</h1>
+            <p class="text-red-500 text-xs tracking-widest opacity-60 font-['Metal_Mania'] uppercase">75-Player Ultra Deluxe</p>
         </header>
 
-        <div id="view-container" class="bg-black/85 backdrop-blur-xl rounded-[2.5rem] p-6 md:p-12 border border-red-900/40 shadow-2xl transition-all duration-700">
-            <!-- Dynamic Screens -->
+        <div id="main-stage" class="glass-panel rounded-[2rem] p-4 md:p-8 flex-grow mb-4 flex flex-col">
+            <!-- Dynamic Content -->
         </div>
 
-        <footer class="mt-8 text-center">
-            <div id="game-status-footer" class="text-red-900 text-sm tracking-[0.3em] uppercase opacity-50"></div>
-        </footer>
+        <div id="game-log" class="glass-panel rounded-xl p-3 h-32 overflow-y-auto text-xs hidden">
+            <h4 class="uppercase text-red-900 font-bold mb-2 border-b border-red-900/20">Book of Shadows (Game History)</h4>
+            <div id="log-content"></div>
+        </div>
     </div>
 
     <script>
-        const GameState = {
-            phase: 'SETUP',
-            players: [],
-            logs: [],
-            nightActions: { killed: null, protected: null, checked: null },
-            currentTurnIndex: 0,
-            winner: null,
-            audioInitialized: false,
-            heartbeat: null
-        };
-
         const ROLES = {
-            WEREWOLF: { name: 'Werewolf', icon: '🐺', color: 'text-red-600', desc: 'Sow chaos. Kill one villager each night.' },
-            SEER: { name: 'Seer', icon: '👁️', color: 'text-purple-500', desc: 'The eyes in the dark. Peek at one player\'s true nature.' },
-            DOCTOR: { name: 'Doctor', icon: '🧪', color: 'text-green-500', desc: 'A beacon of hope. Shield one soul from death.' },
-            VILLAGER: { name: 'Villager', icon: '👨‍🌾', color: 'text-blue-500', desc: 'Strength in numbers. Find the beasts among you.' }
+            WEREWOLF: { name: 'Werewolf', icon: '🐺', class: 'card-werewolf', color: 'text-red-800', desc: 'Tonight, hunt the innocent. Stay hidden by day.' },
+            SEER: { name: 'Seer', icon: '👁️', class: 'card-seer', color: 'text-purple-900', desc: 'Peer into the soul of any player to reveal their true nature.' },
+            DOCTOR: { name: 'Doctor', icon: '🧪', class: 'card-doctor', color: 'text-blue-900', desc: 'Protect one soul tonight. They shall not perish by wolf claws.' },
+            VILLAGER: { name: 'Villager', icon: '👨‍🌾', class: 'card-villager', color: 'text-green-900', desc: 'Find the monsters hiding in human skin. Vote them out.' }
         };
 
-        async function speak(text) {
-            try {
-                const payload = {
-                    contents: [{ parts: [{ text: `Say in a deep, gravelly, spooky horror narrator voice: ${text}` }] }],
-                    generationConfig: {
-                        responseModalities: ["AUDIO"],
-                        speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Algenib" } } }
-                    },
-                    model: "gemini-2.5-flash-preview-tts"
-                };
+        let GameState = {
+            phase: 'SETUP', // SETUP, PRIVACY, ROLES, NIGHT_WOLF, NIGHT_SEER, NIGHT_DOCTOR, DAY_SUMMARY, DAY_VOTING
+            players: [],
+            currentTurnIndex: 0,
+            nightActions: { killed: null, protected: null },
+            dayResult: '',
+            history: [],
+            roleCounts: { werewolf: 1, seer: 1, doctor: 1 }
+        };
 
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
+        function speak(text) {
+            const msg = new SpeechSynthesisUtterance(text);
+            msg.rate = 0.9;
+            msg.pitch = 0.6;
+            window.speechSynthesis.speak(msg);
+        }
 
-                const result = await response.json();
-                const audioData = result?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-                const mimeType = result?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.mimeType;
-
-                if (audioData) {
-                    const sampleRate = parseInt(mimeType.match(/rate=(\d+)/)[1], 10);
-                    const binary = atob(audioData);
-                    const bytes = new Uint8Array(binary.length);
-                    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-                    const pcm16 = new Int16Array(bytes.buffer);
-                    const wavBlob = pcmToWav(pcm16, sampleRate);
-                    const audio = new Audio(URL.createObjectURL(wavBlob));
-                    audio.play();
-                }
-            } catch (e) {
-                console.error("TTS failed", e);
+        function addLog(msg) {
+            GameState.history.unshift(msg);
+            const content = document.getElementById('log-content');
+            if(content) {
+                content.innerHTML = GameState.history.map(h => `<div class="log-entry">${h}</div>`).join('');
             }
-        }
-
-        function pcmToWav(pcm16, sampleRate) {
-            const buffer = new ArrayBuffer(44 + pcm16.length * 2);
-            const view = new DataView(buffer);
-            const writeString = (offset, string) => { for (let i = 0; i < string.length; i++) view.setUint8(offset + i, string.charCodeAt(i)); };
-            writeString(0, 'RIFF'); view.setUint32(4, 36 + pcm16.length * 2, true); writeString(8, 'WAVE');
-            writeString(12, 'fmt '); view.setUint32(16, 16, true); view.setUint16(20, 1, true); view.setUint16(22, 1, true);
-            view.setUint32(24, sampleRate, true); view.setUint32(28, sampleRate * 2, true); view.setUint16(32, 2, true);
-            view.setUint16(34, 16, true); writeString(36, 'data'); view.setUint32(40, pcm16.length * 2, true);
-            for (let i = 0; i < pcm16.length; i++) view.setInt16(44 + i * 2, pcm16[i], true);
-            return new Blob([buffer], { type: 'audio/wav' });
-        }
-
-        async function initAudio() {
-            if (GameState.audioInitialized) return;
-            await Tone.start();
-            GameState.audioInitialized = true;
-            
-            // Create a creepy heartbeat drone
-            GameState.heartbeat = new Tone.MembraneSynth({
-                pitchDecay: 0.05,
-                octaves: 4,
-                oscillator: { type: "sine" }
-            }).toDestination();
-        }
-
-        function playHeartbeat(bpm = 60) {
-            if (!GameState.audioInitialized) return;
-            Tone.Transport.cancel();
-            Tone.Transport.scheduleRepeat((time) => {
-                GameState.heartbeat.triggerAttackRelease("C1", "8n", time, 0.3);
-            }, "4n");
-            Tone.Transport.bpm.value = bpm;
-            Tone.Transport.start();
-        }
-
-        function stopHeartbeat() {
-            Tone.Transport.stop();
         }
 
         function render() {
-            const container = document.getElementById('view-container');
-            const app = document.getElementById('app');
-            container.innerHTML = '';
+            const stage = document.getElementById('main-stage');
+            const logPanel = document.getElementById('game-log');
             
-            // Background shifts for Night
-            if (GameState.phase.startsWith('NIGHT')) {
-                app.classList.add('night-mode');
-            } else {
-                app.classList.remove('night-mode');
-            }
+            // Shift backgrounds
+            document.body.className = GameState.phase.startsWith('NIGHT') ? 'bg-night' : 
+                                     (GameState.phase.startsWith('DAY_VOTING') ? 'bg-voting' : 'bg-day');
 
-            switch(GameState.phase) {
-                case 'SETUP': renderSetup(container); break;
-                case 'ROLES': renderRoleDistribution(container); break;
-                case 'NIGHT_WOLF': renderNightPhase(container, 'WEREWOLF'); break;
-                case 'NIGHT_SEER': renderNightPhase(container, 'SEER'); break;
-                case 'NIGHT_DOCTOR': renderNightPhase(container, 'DOCTOR'); break;
-                case 'DAY_SUMMARY': renderDaySummary(container); break;
-                case 'DAY_VOTING': renderDayVoting(container); break;
-                case 'GAME_OVER': renderGameOver(container); break;
-            }
+            stage.innerHTML = '';
+            if (GameState.phase === 'SETUP') renderSetup(stage);
+            else if (GameState.phase === 'PRIVACY') renderPrivacy(stage);
+            else if (GameState.phase === 'ROLES') renderRoles(stage);
+            else if (GameState.phase.startsWith('NIGHT')) renderNight(stage);
+            else if (GameState.phase === 'DAY_SUMMARY') renderSummary(stage);
+            else if (GameState.phase === 'DAY_VOTING') renderVoting(stage);
             
-            updateFooter();
+            logPanel.classList.toggle('hidden', GameState.phase === 'SETUP');
         }
 
-        function renderSetup(container) {
-            container.innerHTML = `
-                <div class="space-y-8">
-                    <h2 class="text-4xl font-['Nosifer'] text-center text-red-600 mb-8">The Sacrificial List</h2>
-                    <div class="flex gap-4">
-                        <input id="new-player-name" type="text" placeholder="Who joins the feast?" class="flex-1 bg-black/50 border-2 border-red-900 rounded-2xl px-6 py-4 focus:outline-none focus:ring-4 focus:ring-red-600/20 transition text-red-400 text-2xl font-['Metal_Mania']">
-                        <button onclick="addPlayer()" class="bg-red-800 hover:bg-red-600 text-white px-8 rounded-2xl font-bold transition-all transform active:scale-95 shadow-[0_0_15px_rgba(185,28,28,0.4)]">ADD</button>
+        function renderSetup(stage) {
+            const totalUsed = GameState.roleCounts.werewolf + GameState.roleCounts.seer + GameState.roleCounts.doctor;
+            const remainingVillagers = Math.max(0, GameState.players.length - totalUsed);
+
+            stage.innerHTML = `
+                <div class="space-y-4">
+                    <h2 class="text-2xl font-['Nosifer'] text-center text-red-700">Victim Enrollment</h2>
+                    <div class="flex flex-col md:flex-row gap-2">
+                        <input id="p-input" placeholder="Enter Soul Name..." class="flex-1 bg-black/50 border border-red-900/50 p-3 rounded-lg focus:outline-none text-red-400">
+                        <button onclick="addPlayer()" class="bg-red-900 px-6 py-3 rounded-lg font-bold hover:bg-red-700">ENROLL</button>
                     </div>
-                    <div id="player-list" class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-72 overflow-y-auto p-2">
-                        ${GameState.players.map((p, i) => `
-                            <div class="group flex justify-between items-center bg-red-900/10 p-4 rounded-2xl border border-red-900/30 hover:border-red-600 transition-all">
-                                <span class="text-2xl text-gray-100 group-hover:text-red-500">${p.name}</span>
-                                <button onclick="removePlayer(${i})" class="text-red-900 hover:text-red-500 text-2xl">✕</button>
+
+                    <div class="grid grid-cols-3 gap-2 bg-red-950/10 p-4 rounded-xl border border-red-900/20">
+                        ${['werewolf', 'seer', 'doctor'].map(role => `
+                            <div class="text-center">
+                                <div class="text-[10px] uppercase opacity-50">${role}s</div>
+                                <div class="flex items-center justify-center gap-2">
+                                    <button onclick="adjRole('${role}', -1)" class="w-6 h-6 bg-red-900 rounded-full">-</button>
+                                    <span class="text-xl">${GameState.roleCounts[role]}</span>
+                                    <button onclick="adjRole('${role}', 1)" class="w-6 h-6 bg-red-900 rounded-full">+</button>
+                                </div>
                             </div>
                         `).join('')}
                     </div>
-                    <div class="pt-6">
-                        ${GameState.players.length < 5 ? 
-                            `<p class="text-center text-red-900 italic text-xl animate-pulse">Wait. ${5 - GameState.players.length} more are required...</p>` : 
-                            `<button onclick="startRolesPhase()" class="w-full bg-gradient-to-r from-red-900 to-red-700 hover:from-red-700 hover:to-red-600 py-6 rounded-3xl text-4xl font-['Creepster'] uppercase tracking-[0.2em] transition-all transform hover:scale-105 shadow-[0_0_40px_rgba(185,28,28,0.6)]">Begin the Ritual</button>`
-                        }
+
+                    <p class="text-center text-[10px] text-green-700 font-bold">Auto-Villagers: ${remainingVillagers}</p>
+
+                    <div class="player-grid max-h-48 overflow-y-auto p-2 border border-white/5 rounded-lg">
+                        ${GameState.players.map((p, i) => `
+                            <div class="bg-white/5 px-2 py-1 rounded flex justify-between items-center text-xs">
+                                <span class="truncate">${p.name}</span>
+                                <button onclick="removePlayer(${i})" class="text-red-900">×</button>
+                            </div>
+                        `).join('')}
                     </div>
+
+                    <button onclick="initGame()" class="w-full bg-red-700 py-4 rounded-xl font-['Creepster'] text-3xl shadow-lg hover:bg-red-600 transition">INITIATE RITUAL</button>
                 </div>
             `;
-            document.getElementById('new-player-name')?.focus();
+            document.getElementById('p-input').addEventListener('keypress', (e) => { if(e.key === 'Enter') addPlayer(); });
         }
 
-        async function startRolesPhase() {
-            await initAudio();
-            assignRoles();
-            GameState.phase = 'ROLES';
+        function addPlayer() {
+            const input = document.getElementById('p-input');
+            const name = input.value.trim();
+            if (name && GameState.players.length < 75) {
+                GameState.players.push({ name, id: Date.now() + Math.random(), alive: true, role: null });
+                input.value = '';
+                render();
+            }
+        }
+
+        function adjRole(r, d) { GameState.roleCounts[r] = Math.max(0, GameState.roleCounts[r] + d); render(); }
+        function removePlayer(i) { GameState.players.splice(i, 1); render(); }
+
+        function initGame() {
+            if(GameState.players.length < 4) return;
+            
+            // Assign roles
+            let pool = [];
+            for(let i=0; i<GameState.roleCounts.werewolf; i++) pool.push('WEREWOLF');
+            for(let i=0; i<GameState.roleCounts.seer; i++) pool.push('SEER');
+            for(let i=0; i<GameState.roleCounts.doctor; i++) pool.push('DOCTOR');
+            while(pool.length < GameState.players.length) pool.push('VILLAGER');
+            
+            pool = pool.sort(() => Math.random() - 0.5);
+            GameState.players.forEach((p, i) => p.role = pool[i]);
+
+            GameState.phase = 'PRIVACY';
             GameState.currentTurnIndex = 0;
-            speak("Hand the device to " + GameState.players[0].name + " to reveal their secret identity.");
+            addLog("The Ritual has begun.");
             render();
         }
 
-        function renderRoleDistribution(container) {
-            const player = GameState.players[GameState.currentTurnIndex];
-            const roleData = ROLES[player.role.toUpperCase()];
-            
-            container.innerHTML = `
-                <div class="text-center space-y-12 py-6">
-                    <div class="space-y-2">
-                        <h2 class="text-3xl text-red-900 uppercase tracking-tighter">Current Vessel</h2>
-                        <div class="text-7xl font-['Nosifer'] text-white drop-shadow-lg">${player.name}</div>
+        function renderPrivacy(stage) {
+            const p = GameState.players[GameState.currentTurnIndex];
+            stage.innerHTML = `
+                <div class="text-center space-y-8 py-10">
+                    <h2 class="text-xl uppercase opacity-50">Private Reveal</h2>
+                    <div class="text-5xl font-['Nosifer'] text-white">${p.name}</div>
+                    <div class="p-8 bg-red-950/20 border border-red-900/30 rounded-2xl italic">
+                        Pass the device to ${p.name}. <br>No one else should be looking.
                     </div>
+                    <button onclick="GameState.phase='ROLES'; render();" class="w-full max-w-xs bg-red-800 py-4 rounded-xl font-bold uppercase active-glow">I AM ${p.name}</button>
+                </div>
+            `;
+        }
 
-                    <div class="card-container mx-auto" onclick="this.querySelector('.card-inner').classList.toggle('is-flipped')">
+        function renderRoles(stage) {
+            const p = GameState.players[GameState.currentTurnIndex];
+            const r = ROLES[p.role];
+            stage.innerHTML = `
+                <div class="text-center space-y-4">
+                    <h2 class="text-sm opacity-50 uppercase">Identity Confirmed</h2>
+                    
+                    <div class="card-container" onclick="this.querySelector('.card-inner').classList.toggle('is-flipped')">
                         <div class="card-inner">
                             <div class="card-face card-front">
-                                <span class="text-8xl opacity-20">?</span>
-                                <p class="mt-4 text-red-900 font-bold uppercase tracking-widest">Tap to Flip</p>
+                                <div class="text-6xl opacity-10">?</div>
+                                <div class="text-[10px] uppercase tracking-widest">Tap to Reveal</div>
                             </div>
-                            <div class="card-face card-back">
-                                <span class="text-9xl mb-6">${roleData.icon}</span>
-                                <h3 class="text-5xl font-['Nosifer'] ${roleData.color}">${roleData.name}</h3>
-                                <p class="mt-6 px-8 text-lg italic text-gray-300 leading-tight">"${roleData.desc}"</p>
+                            <div class="card-face card-back ${r.class}">
+                                <div class="w-full text-center py-2 font-['Nosifer'] uppercase text-lg border-b-2 border-black/10">${r.name}</div>
+                                <div class="text-8xl">${r.icon}</div>
+                                <div class="p-2 italic text-[10px] border border-black/5 rounded">"${r.desc}"</div>
                             </div>
                         </div>
                     </div>
 
-                    <button onclick="nextRole()" class="bg-black border-2 border-red-900 px-12 py-5 rounded-full text-2xl hover:bg-red-900/20 transition-all font-['Creepster'] tracking-widest text-red-700">I AM COMMITTED</button>
+                    <button onclick="finishRoleReveal()" class="bg-black border border-red-900 px-10 py-3 rounded-full text-sm font-bold hover:bg-red-950">MY FATE IS SEALED</button>
                 </div>
             `;
         }
 
-        function renderNightPhase(container, roleType) {
-            const roleData = ROLES[roleType];
-            const alivePlayers = GameState.players.filter(p => p.alive);
-            
-            let actionText = "";
-            if (roleType === 'WEREWOLF') actionText = "Whom shall we slaughter?";
-            if (roleType === 'SEER') actionText = "Whose soul shall I peer into?";
-            if (roleType === 'DOCTOR') actionText = "Who deserves protection tonight?";
+        function finishRoleReveal() {
+            GameState.currentTurnIndex++;
+            if(GameState.currentTurnIndex < GameState.players.length) {
+                GameState.phase = 'PRIVACY';
+            } else {
+                startNight();
+            }
+            render();
+        }
 
-            container.innerHTML = `
-                <div class="space-y-8 text-center">
-                    <div class="flex flex-col items-center">
-                        <span class="text-8xl mb-4 opacity-80">${roleData.icon}</span>
-                        <h2 class="text-5xl font-['Nosifer'] ${roleData.color} uppercase">${roleData.name} Awakening</h2>
-                        <p class="text-xl text-gray-500 italic mt-2">${actionText}</p>
-                    </div>
+        function startNight() {
+            GameState.nightActions = { killed: null, protected: null };
+            speak("Everyone, close your eyes. The shadows are lengthening.");
+            GameState.phase = 'NIGHT_WOLF';
+            addLog("Night falls over the village.");
+            render();
+        }
 
-                    <div class="grid grid-cols-2 gap-4">
-                        ${alivePlayers.map(p => `
-                            <button onclick="handleNightAction('${roleType}', ${p.id})" class="bg-red-900/10 hover:bg-red-700/40 border border-red-900/50 p-5 rounded-2xl transition-all group">
-                                <span class="text-2xl text-gray-300 group-hover:text-white font-['Metal_Mania']">${p.name}</span>
+        function renderNight(stage) {
+            let roleTitle = "Werewolves";
+            let instructions = "Choose your prey.";
+            let currentRoleKey = 'WEREWOLF';
+
+            if(GameState.phase === 'NIGHT_SEER') { roleTitle = "Seer"; instructions = "Peak into a soul."; currentRoleKey = 'SEER'; }
+            if(GameState.phase === 'NIGHT_DOCTOR') { roleTitle = "Doctor"; instructions = "Who shall you save?"; currentRoleKey = 'DOCTOR'; }
+
+            const alive = GameState.players.filter(p => p.alive);
+            const r = ROLES[currentRoleKey];
+
+            stage.innerHTML = `
+                <div class="space-y-4 text-center">
+                    <div class="nosifer text-red-600 text-2xl animate-pulse">${r.icon} ${roleTitle}</div>
+                    <p class="text-xs italic opacity-50">${instructions}</p>
+
+                    <div class="player-grid max-h-[50vh] overflow-y-auto pr-2">
+                        ${alive.map(p => `
+                            <button onclick="handleNightAction('${currentRoleKey}', ${p.id})" class="bg-red-950/20 border border-red-900/30 p-3 rounded-lg text-xs hover:bg-red-700 transition">
+                                ${p.name}
                             </button>
                         `).join('')}
                     </div>
@@ -352,177 +334,127 @@
         }
 
         function handleNightAction(role, targetId) {
-            if (role === 'WEREWOLF') GameState.nightActions.killed = targetId;
-            if (role === 'SEER') {
-                const target = GameState.players.find(p => p.id === targetId);
-                alert(`${target.name} is a ${target.role}!`); // UI fallback
+            const target = GameState.players.find(p => p.id === targetId);
+            if(role === 'WEREWOLF') GameState.nightActions.killed = targetId;
+            if(role === 'DOCTOR') GameState.nightActions.protected = targetId;
+            if(role === 'SEER') {
+                const isWolf = target.role === 'WEREWOLF';
+                addLog(`Seer peered at ${target.name}.`);
+                stageModal("Spirit Mirror", `${target.name} is ${isWolf ? 'A WEREWOLF!' : 'Innocent.'}`);
+                return;
             }
-            if (role === 'DOCTOR') GameState.nightActions.protected = targetId;
-
             advanceNight();
         }
 
-        async function advanceNight() {
-            if (GameState.phase === 'NIGHT_WOLF') {
-                if (GameState.players.some(p => p.role === 'Seer' && p.alive)) {
-                    GameState.phase = 'NIGHT_SEER';
-                    speak("The werewolves have fed. Seer, open your eyes and find the truth.");
-                } else {
-                    GameState.phase = 'NIGHT_DOCTOR'; // Skip Seer
-                    speak("The werewolves have fed. Doctor, wake up and save a life.");
-                }
-            } else if (GameState.phase === 'NIGHT_SEER') {
-                if (GameState.players.some(p => p.role === 'Doctor' && p.alive)) {
-                    GameState.phase = 'NIGHT_DOCTOR';
-                    speak("Seer, return to sleep. Doctor, wake up.");
-                } else {
-                    processNightEnd();
-                }
+        function advanceNight() {
+            if(GameState.phase === 'NIGHT_WOLF') {
+                if(GameState.roleCounts.seer > 0 && GameState.players.some(p => p.role === 'SEER' && p.alive)) GameState.phase = 'NIGHT_SEER';
+                else if(GameState.roleCounts.doctor > 0 && GameState.players.some(p => p.role === 'DOCTOR' && p.alive)) GameState.phase = 'NIGHT_DOCTOR';
+                else processDawn();
+            } else if(GameState.phase === 'NIGHT_SEER') {
+                if(GameState.roleCounts.doctor > 0 && GameState.players.some(p => p.role === 'DOCTOR' && p.alive)) GameState.phase = 'NIGHT_DOCTOR';
+                else processDawn();
             } else {
-                processNightEnd();
+                processDawn();
             }
             render();
         }
 
-        function processNightEnd() {
+        function processDawn() {
             const { killed, protected } = GameState.nightActions;
-            let result = "A quiet night has passed.";
-            
+            let msg = "The sun rises on a quiet village. No one was harmed.";
             if (killed && killed !== protected) {
                 const victim = GameState.players.find(p => p.id === killed);
                 victim.alive = false;
-                result = `Horror has struck! ${victim.name} was found shredded in the town square.`;
+                msg = `${victim.name} was slaughtered in the night. Blood was found everywhere.`;
             } else if (killed && killed === protected) {
-                result = "The Doctor's swift action saved a life tonight! No one died.";
+                msg = "A struggle took place, but the Doctor's healing hands saved the victim.";
             }
-
+            GameState.dayResult = msg;
             GameState.phase = 'DAY_SUMMARY';
-            GameState.dayResult = result;
-            speak("The sun rises. " + result);
-            checkGameOver();
+            addLog(msg);
+            speak(msg);
         }
 
-        function renderDayVoting(container) {
-            playHeartbeat(80);
-            container.innerHTML = `
-                <div class="space-y-8 text-center">
-                    <h2 class="text-5xl font-['Creepster'] text-red-600 animate-pulse">The Council of Suspicion</h2>
-                    <p class="text-xl text-gray-500 italic">Discussion is mandatory. Death is optional.</p>
+        function renderSummary(stage) {
+            stage.innerHTML = `
+                <div class="text-center space-y-8 py-10">
+                    <h2 class="text-5xl font-['Creepster'] text-red-600">Daybreak</h2>
+                    <div class="p-6 bg-red-950/20 rounded-2xl text-xl italic leading-relaxed border-y border-red-900/30">
+                        "${GameState.dayResult}"
+                    </div>
+                    <button onclick="GameState.phase='DAY_VOTING'; render();" class="w-full bg-red-800 py-4 rounded-xl font-['Creepster'] text-3xl active-glow">TOWN ASSEMBLY</button>
+                </div>
+            `;
+        }
+
+        function renderVoting(stage) {
+            const alive = GameState.players.filter(p => p.alive);
+            stage.innerHTML = `
+                <div class="space-y-4 text-center">
+                    <h2 class="text-3xl font-['Nosifer'] text-red-700">The Gallows</h2>
+                    <p class="text-xs opacity-50 uppercase tracking-widest">Who shall pay for these crimes?</p>
                     
-                    <div class="grid grid-cols-2 gap-4">
-                        ${GameState.players.filter(p => p.alive).map(p => `
-                            <button onclick="lynchPlayer(${p.id})" class="bg-black border-2 border-red-950 p-6 rounded-3xl hover:border-red-600 transition-all group transform hover:-translate-y-1">
-                                <span class="text-3xl font-['Metal_Mania'] text-red-200 group-hover:text-red-500">${p.name}</span>
-                                <div class="text-[10px] uppercase opacity-0 group-hover:opacity-100 text-red-800 font-bold tracking-tighter mt-1">Send to Gallows</div>
+                    <div class="player-grid max-h-[50vh] overflow-y-auto">
+                        ${alive.map(p => `
+                            <button onclick="executePlayer(${p.id})" class="bg-black/50 border border-red-900/50 p-4 rounded-xl hover:border-red-500 transition group">
+                                <span class="text-sm font-bold text-gray-400 group-hover:text-red-500">${p.name}</span>
                             </button>
                         `).join('')}
                     </div>
 
-                    <button onclick="skipDay()" class="w-full bg-gray-900 border border-gray-800 text-gray-500 py-4 rounded-2xl hover:text-red-700 transition font-['Creepster']">The Day Ends in Standoff</button>
+                    <div class="flex gap-2">
+                        <button onclick="startNight()" class="flex-1 bg-gray-900 py-3 rounded-lg text-xs font-bold border border-white/5">ABSTAIN (SKIP DAY)</button>
+                    </div>
                 </div>
             `;
         }
 
-        function lynchPlayer(id) {
+        function executePlayer(id) {
             const p = GameState.players.find(x => x.id === id);
             p.alive = false;
-            stopHeartbeat();
-            speak(`The village has spoken. ${p.name}, a ${p.role}, has been executed.`);
-            if (!checkGameOver()) {
-                startNight();
-            }
+            addLog(`${p.name} (${p.role}) was sent to the gallows.`);
+            speak(`${p.name} has been lynched.`);
+            if(!checkWin()) startNight();
         }
 
-        function startNight() {
-            GameState.phase = 'NIGHT_WOLF';
-            GameState.nightActions = { killed: null, protected: null, checked: null };
-            speak("The sun sets. Everyone, close your eyes. Werewolves, wake up.");
-            render();
-        }
-
-        function checkGameOver() {
-            const wolves = GameState.players.filter(p => p.role === 'Werewolf' && p.alive).length;
-            const villagers = GameState.players.filter(p => p.role !== 'Werewolf' && p.alive).length;
-
-            if (wolves === 0) {
-                GameState.phase = 'GAME_OVER';
-                GameState.winner = 'VILLAGERS';
-                render();
-                return true;
-            }
-            if (wolves >= villagers) {
-                GameState.phase = 'GAME_OVER';
-                GameState.winner = 'WEREWOLVES';
-                render();
-                return true;
-            }
+        function checkWin() {
+            const w = GameState.players.filter(p => p.role === 'WEREWOLF' && p.alive).length;
+            const v = GameState.players.filter(p => p.role !== 'WEREWOLF' && p.alive).length;
+            
+            if (w === 0) { renderVictory('Villagers'); return true; }
+            if (w >= v) { renderVictory('Werewolves'); return true; }
             return false;
         }
 
-        // Helper: Initialize role assignment
-        function assignRoles() {
-            const count = GameState.players.length;
-            let roles = ['Werewolf', 'Seer', 'Doctor', 'Villager', 'Villager'];
-            if (count > 5) roles.push('Villager');
-            if (count > 6) roles.push('Werewolf');
-            if (count > 7) roles.push('Villager');
-            if (count > 8) roles.push('Villager');
-            if (count > 9) roles.push('Villager');
-            if (count > 10) roles.push('Villager');
-            if (count > 11) roles.push('Werewolf');
-
-            roles = roles.sort(() => Math.random() - 0.5);
-            GameState.players.forEach((p, i) => p.role = roles[i]);
-        }
-
-        function nextRole() {
-            GameState.currentTurnIndex++;
-            if (GameState.currentTurnIndex < GameState.players.length) {
-                speak("Pass the device to " + GameState.players[GameState.currentTurnIndex].name);
-                render();
-            } else {
-                startNight();
-            }
-        }
-
-        function updateFooter() {
-            const alive = GameState.players.filter(p => p.alive).length;
-            const total = GameState.players.length;
-            const footer = document.getElementById('game-status-footer');
-            if (total > 0) footer.innerText = `Souls Remaining: ${alive} / ${total}`;
-        }
-
-        // Generic logic fallbacks
-        function addPlayer() {
-            const input = document.getElementById('new-player-name');
-            const name = input.value.trim();
-            if (name && GameState.players.length < 12) {
-                GameState.players.push({ name, role: null, alive: true, id: Date.now() });
-                input.value = '';
-                render();
-            }
-        }
-        function removePlayer(idx) { GameState.players.splice(idx, 1); render(); }
-        function renderDaySummary(container) {
-            container.innerHTML = `
-                <div class="text-center space-y-10 py-10">
-                    <h2 class="text-5xl font-['Nosifer'] text-red-600">The Morning Report</h2>
-                    <p class="text-3xl text-gray-200 italic font-['Metal_Mania'] max-w-lg mx-auto">"${GameState.dayResult}"</p>
-                    <button onclick="GameState.phase = 'DAY_VOTING'; render();" class="bg-red-900 text-white px-12 py-5 rounded-3xl text-3xl font-['Creepster'] hover:bg-red-600 transition-all shadow-xl">Assemble the Council</button>
+        function renderVictory(side) {
+            const stage = document.getElementById('main-stage');
+            stage.innerHTML = `
+                <div class="text-center space-y-8 py-10">
+                    <div class="text-9xl">${side === 'Werewolves' ? '🐺' : '🏘️'}</div>
+                    <h2 class="text-6xl font-['Nosifer'] ${side === 'Werewolves' ? 'text-red-700' : 'text-blue-700'}">${side} Win!</h2>
+                    <p class="italic text-gray-500">The cycle of blood is complete.</p>
+                    <button onclick="location.reload()" class="bg-red-900 px-10 py-4 rounded-full font-bold">REBIRTH</button>
                 </div>
             `;
         }
-        function skipDay() { stopHeartbeat(); startNight(); }
-        function renderGameOver(container) {
-            const win = GameState.winner === 'WEREWOLVES';
-            container.innerHTML = `
-                <div class="text-center space-y-12 py-10">
-                    <div class="text-9xl animate-bounce">${win ? '🐺' : '🏘️'}</div>
-                    <h2 class="text-8xl font-['Nosifer'] ${win ? 'text-red-700' : 'text-blue-700'}">${win ? 'PACK VICTORY' : 'VILLAGE SAVED'}</h2>
-                    <p class="text-2xl text-gray-500 font-['Creepster'] tracking-widest">The cycle of blood is complete.</p>
-                    <button onclick="location.reload()" class="w-full bg-red-900 py-6 rounded-3xl text-4xl font-['Creepster'] text-white hover:bg-red-600 transition-all shadow-2xl">Resurrect Game</button>
+
+        function stageModal(title, text) {
+            const stage = document.getElementById('main-stage');
+            const overlay = document.createElement('div');
+            overlay.className = "fixed inset-0 bg-black/95 flex items-center justify-center p-6 z-[100]";
+            overlay.innerHTML = `
+                <div class="glass-panel p-8 rounded-3xl text-center max-w-sm w-full space-y-6">
+                    <h3 class="text-2xl font-['Nosifer'] text-red-600">${title}</h3>
+                    <p class="text-lg italic">${text}</p>
+                    <button id="modal-close" class="w-full bg-red-900 py-4 rounded-xl font-bold uppercase">I have seen enough</button>
                 </div>
             `;
+            document.body.appendChild(overlay);
+            document.getElementById('modal-close').onclick = () => {
+                overlay.remove();
+                advanceNight();
+            };
         }
 
         window.onload = render;
